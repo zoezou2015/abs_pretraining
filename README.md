@@ -16,30 +16,22 @@ The `cnndm_article512_summary256_roberta_large` dataset is in binary format and 
 ## Trained Models with SR
 * STEP_SR [download](https://TBF)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/SR/checkpoint30.pt` is the model after pre-training with the Sentence Reordering (SR) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
- * `STEP_AbsSum_model_backup/CNNDM/GIGA-CM/SR/checkpoint20.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on GIGA-CM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
- * `STEP_AbsSum_model_backup/CNNDM/IN-DOMAIN/SR/checkpoint29.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on the training split of CNNDM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
-
+ 
 
 ## Trained Models with NSG
 * STEP_NSG [download](https://TBF)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/NSG/checkpoint20.pt` is the model after pre-training with the Next Sentence Generation (NSG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
- * `STEP_AbsSum_model_backup/CNNDM/GIGA-CM/NSG/checkpoint29.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on GIGA-CM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
- * `STEP_AbsSum_model_backup/CNNDM/IN-DOMAIN/NSG/checkpoint13.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on the training split of CNNDM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
-
+ 
 
 ## Trained Models with MDG
 * STEP_MDG [download](https://TBF)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/MDG/checkpoint30.pt` is the model after pre-training with the Masked Document Generation (MDG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
- * `STEP_AbsSum_model_backup/CNNDM/GIGA-CM/MDG/checkpoint27.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on GIGA-CM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
- * `STEP_AbsSum_model_backup/CNNDM/IN-DOMAIN/MDG/checkpoint29.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on the training split of CNNDM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
-
+ 
 
 ## Trained Models with ALL
 * STEP_ALL [download](https://TBF)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/ALL/checkpoint20.pt` is the model after pre-training with all the three tasks (ALL) on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
- * `STEP_AbsSum_model_backup/CNNDM/GIGA-CM/ALL/checkpoint30.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on GIGA-CM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
- * `STEP_AbsSum_model_backup/CNNDM/IN-DOMAIN/ALL/checkpoint29.pt` is the model after in-domain finetuning, while the model is initialized by the pre-trained model on the training split of CNNDM with the Sentence Reordering task. Note that this stage requires supervised labels on CNNDM dataset.
-
+ 
 
 ## Open-domain Pre-training
 The cost of open-domain pre-training is large and you can download the models after pre-training following the instructions in the previous section. <br>
