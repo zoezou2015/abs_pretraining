@@ -1,4 +1,5 @@
-## STEP: Sequence-to-Sequence Transformer Pre-training for Document Summarization
+## Pre-training for Abstractive Document Summarization by Reinstating Source Text
+This is an implementation of the STEP (**S**equence-**T**o-s**E**quence **P**re-training) model described in [Pre-training for Abstractive Document Summarization by Reinstating Source Text](https://www.aclweb.org/anthology/2020.emnlp-main.297.pdf)
 
 ## Installation
 You need to install python3 and the dependencies in the ```requirements.txt```.
@@ -164,3 +165,23 @@ for ((epoch=${START};epoch<=${END};epoch+=1)); do
                -result_test ${ft_logdir}/epoch.$epoch.test.txt 
 done
 ```
+
+## Citation
+```
+@inproceedings{zou-etal-2020-pre,
+    title = "Pre-training for Abstractive Document Summarization by Reinstating Source Text",
+    author = "Zou, Yanyan  and
+      Zhang, Xingxing  and
+      Lu, Wei  and
+      Wei, Furu  and
+      Zhou, Ming",
+    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)",
+    month = nov,
+    year = "2020",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/2020.emnlp-main.297",
+    pages = "3646--3660",
+}
+```
+
