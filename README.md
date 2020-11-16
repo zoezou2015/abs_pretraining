@@ -11,25 +11,26 @@ You can download the datasets [here](https://microsoft-my.sharepoint.com/:u:/g/p
 The `cnndm_raw` dataset is the raw CNN/Dailymail dataset in text format, which is used for evaluation. <br>
 The `cnndm_article512_summary256_roberta_large` dataset is in binary format and is used for finetuning.
 
-
+## Model Output
+TBD
 
 ## Trained Models with SR
-* STEP_SR [download](https://TBF)
+* STEP_SR [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/SR/checkpoint30.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/SR/checkpoint30.pt` is the model after pre-training with the Sentence Reordering (SR) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with NSG
-* STEP_NSG [download](https://TBF)
+* STEP_NSG [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/NSG/checkpoint20.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/NSG/checkpoint20.pt` is the model after pre-training with the Next Sentence Generation (NSG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with MDG
-* STEP_MDG [download](https://TBF)
+* STEP_MDG [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/MDG/checkpoint30.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/MDG/checkpoint30.pt` is the model after pre-training with the Masked Document Generation (MDG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with ALL
-* STEP_ALL [download](https://TBF)
+* STEP_ALL [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/ALL/checkpoint20.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/ALL/checkpoint20.pt` is the model after pre-training with all the three tasks (ALL) on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
