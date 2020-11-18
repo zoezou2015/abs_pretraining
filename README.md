@@ -9,7 +9,7 @@ pip install -r requirements.txt
 
 
 ## Model Output
-Download(https://drive.google.com/file/d/1QYyc4b07zFA_pCq6Hrxu36gOGXqAZZWy/view?usp=sharing)
+[Download](https://drive.google.com/file/d/1QYyc4b07zFA_pCq6Hrxu36gOGXqAZZWy/view?usp=sharing)
 
 ## Trained Models with SR
 * STEP_SR [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/SR/checkpoint30.pt)
