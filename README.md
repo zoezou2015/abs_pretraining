@@ -7,10 +7,6 @@ You need to install python3 and the dependencies in the ```requirements.txt```.
 pip install -r requirements.txt
 ```
 
-## CNN/DailyMail Dataset
-You can download the datasets [here](https://microsoft-my.sharepoint.com/:u:/g/personal/xizhang_microsoft_com1/ERaYAOUGjwNCpkjfeg8J0QYBSHc9T-jWUOSmTIFJ6l9tPA?e=VkDCfx) <br>
-The `cnndm_raw` dataset is the raw CNN/Dailymail dataset in text format, which is used for evaluation. <br>
-The `cnndm_article512_summary256_roberta_large` dataset is in binary format and is used for finetuning.
 
 ## Model Output
 TBD
