@@ -301,8 +301,8 @@ class AbstractiveSumRobertaDataset(FairseqDataset):
         return src_item, tgt_item
 
     def get_mix_order_pair(self, index):
-        src_item = self.src[index]
-        src_list = src_item.tolist()[1:-1]  # [self.src_dict.eos_index] + src_item.tolist()
+        tgt_item = self.src[index]
+        src_list = tgt_item.tolist()[1:-1]  # [self.src_dict.eos_index] + src_item.tolist()
         tokens = [self.src_dict[idx] for idx in src_list]
         src_tokens = ' '.join(tokens).split(self.src_dict.sep_word)
         sents = []
@@ -312,13 +312,13 @@ class AbstractiveSumRobertaDataset(FairseqDataset):
             labels.append(i)
         # print()
         random.shuffle(labels)
-        tgt_list = []
+        src_list = []
         for l in labels:
-            tgt_list.extend(sents[l])
+            src_list.extend(sents[l])
         # print(labels)
         # print(self.src_dict.sep_index)
         # print(sents)
-        tgt_item = torch.LongTensor(tgt_list)
+        src_item = torch.LongTensor(src_list)
         return src_item, tgt_item
 
     def mask_interval(self, len, first_pad_pos):
