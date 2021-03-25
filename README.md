@@ -1,4 +1,5 @@
-## STEP: Sequence-to-Sequence Transformer Pre-training for Document Summarization
+## Pre-training for Abstractive Document Summarization by Reinstating Source Text
+This is an implementation of the STEP (**S**equence-**T**o-s**E**quence **P**re-training) model described in [Pre-training for Abstractive Document Summarization by Reinstating Source Text](https://www.aclweb.org/anthology/2020.emnlp-main.297.pdf)
 
 ## Installation
 You need to install python3 and the dependencies in the ```requirements.txt```.
@@ -6,30 +7,27 @@ You need to install python3 and the dependencies in the ```requirements.txt```.
 pip install -r requirements.txt
 ```
 
-## CNN/DailyMail Dataset
-You can download the datasets [here](https://microsoft-my.sharepoint.com/:u:/g/personal/xizhang_microsoft_com1/ERaYAOUGjwNCpkjfeg8J0QYBSHc9T-jWUOSmTIFJ6l9tPA?e=VkDCfx) <br>
-The `cnndm_raw` dataset is the raw CNN/Dailymail dataset in text format, which is used for evaluation. <br>
-The `cnndm_article512_summary256_roberta_large` dataset is in binary format and is used for finetuning.
 
-
+## Model Output
+[Download](https://drive.google.com/file/d/1QYyc4b07zFA_pCq6Hrxu36gOGXqAZZWy/view?usp=sharing)
 
 ## Trained Models with SR
-* STEP_SR [download](https://TBF)
+* STEP_SR [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/SR/checkpoint30.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/SR/checkpoint30.pt` is the model after pre-training with the Sentence Reordering (SR) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with NSG
-* STEP_NSG [download](https://TBF)
+* STEP_NSG [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/NSG/checkpoint20.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/NSG/checkpoint20.pt` is the model after pre-training with the Next Sentence Generation (NSG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with MDG
-* STEP_MDG [download](https://TBF)
+* STEP_MDG [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/MDG/checkpoint30.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/MDG/checkpoint30.pt` is the model after pre-training with the Masked Document Generation (MDG) task on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
 ## Trained Models with ALL
-* STEP_ALL [download](https://TBF)
+* STEP_ALL [download](https://xingxingzhang.blob.core.windows.net/share/step/Pre-trained_Model/ALL/checkpoint20.pt)
  * `STEP_AbsSum_model_backup/Pre-trained_Model/ALL/checkpoint20.pt` is the model after pre-training with all the three tasks (ALL) on GIGA-CM dataset. Note that this stage only requires unlabeled documents.
  
 
@@ -163,3 +161,23 @@ for ((epoch=${START};epoch<=${END};epoch+=1)); do
                -result_test ${ft_logdir}/epoch.$epoch.test.txt 
 done
 ```
+
+## Citation
+```
+@inproceedings{zou-etal-2020-pre,
+    title = "Pre-training for Abstractive Document Summarization by Reinstating Source Text",
+    author = "Zou, Yanyan  and
+      Zhang, Xingxing  and
+      Lu, Wei  and
+      Wei, Furu  and
+      Zhou, Ming",
+    booktitle = "Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)",
+    month = nov,
+    year = "2020",
+    address = "Online",
+    publisher = "Association for Computational Linguistics",
+    url = "https://www.aclweb.org/anthology/2020.emnlp-main.297",
+    pages = "3646--3660",
+}
+```
+
