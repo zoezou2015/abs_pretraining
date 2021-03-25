@@ -1,4 +1,4 @@
-## Pre-training for Abstractive Document Summarization by Reinstating Source Text
+# Pre-training for Abstractive Document Summarization by Reinstating Source Text
 This is an implementation of the STEP (**S**equence-**T**o-s**E**quence **P**re-training) model described in [Pre-training for Abstractive Document Summarization by Reinstating Source Text](https://www.aclweb.org/anthology/2020.emnlp-main.297.pdf)
 
 ## Installation
@@ -82,7 +82,7 @@ python -u $codedir/train.py $datadir --left-pad-source False --ensemble-pretrain
  --log-interval 1000 2>&1 | tee $modeldir/log.txt
 ```
 
-## In-domain finetuning
+## In-domain fine-tuning
 Here is the script for doing finetuing on CNNDM dataset.
 ```
 codedir=/mnt/yanyan/abstractive_summarization_pretraining
@@ -161,6 +161,24 @@ for ((epoch=${START};epoch<=${END};epoch+=1)); do
                -result_test ${ft_logdir}/epoch.$epoch.test.txt 
 done
 ```
+
+## Pre-train on customized corpus
+
+Preprocess and pre-train a model on your customized corpus
+
+```
+python preprocess_sum_roberta_pretrain.py --srcdict roberta-vocab/dict.txt \
+    --tgtdict roberta-vocab/dict.txt
+    --source-lang article
+    --target-lang summary
+    --trainpref raw-data/sample10/training
+    --validpref raw-data/sample10/validation
+    --testpref raw-data/sample10/test
+    --destdir data-bin/sample10
+```
+
+Here, a fake path for ```--testpref``` is applicable.
+
 
 ## Citation
 ```
