@@ -247,16 +247,16 @@ class TransformerEncoder(FairseqEncoder):
         print('Distributed rank: ', args.distributed_rank)
         print('Number of used GPU: ', self.n_gpu)
 
-        # if args.distributed_world_size > 1:
-        #     if args.distributed_rank not in [-1, 0]:  # [1, 0]
-        #         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
+        if args.distributed_world_size > 1:
+            if args.distributed_rank not in [-1, 0]:  # [1, 0]
+                torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
         # Load pre-trained model (weights)
         config = RobertaConfig.from_pretrained(args.roberta_model)
         self.roberta = RobertaModel.from_pretrained(args.roberta_model, config=config)
 
-        # if args.distributed_world_size > 1:
-        #     if args.distributed_rank == 0:  # 1
-        #         torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
+        if args.distributed_world_size > 1:
+            if args.distributed_rank == 0:  # 1
+                torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx

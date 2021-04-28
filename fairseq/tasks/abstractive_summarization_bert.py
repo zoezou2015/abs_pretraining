@@ -60,7 +60,7 @@ class AbstractiveSummarizationBertTask(FairseqTask):
                             help='load the dataset lazily')
         parser.add_argument('--raw-text', action='store_true',
                             help='load raw text dataset')
-        parser.add_argument('--left-pad-source', default='True', type=str, metavar='BOOL',
+        parser.add_argument('--left-pad-source', default='False', type=str, metavar='BOOL',
                             help='pad the source on the left')
         parser.add_argument('--left-pad-target', default='False', type=str, metavar='BOOL',
                             help='pad the target on the left')
@@ -68,12 +68,18 @@ class AbstractiveSummarizationBertTask(FairseqTask):
                             help='max number of tokens in the source sequence')
         parser.add_argument('--max-target-positions', default=1024, type=int, metavar='N',
                             help='max number of tokens in the target sequence')
+        parser.add_argument('--max-mask-len', default=256, type=int, metavar='N',
+                            help='max number of masked tokens in the source sequence')
+        parser.add_argument('--min-mask-len', default=100, type=int, metavar='N',
+                            help='max number of masked tokens in the target sequence')
         parser.add_argument('--upsample-primary', default=1, type=int,
                             help='amount to upsample primary dataset')
-        parser.add_argument('--init-from-pretrained-doc-model', default='False', type=str, metavar='BOOL',
+        parser.add_argument('--init-from-pretrained-model', default='False', type=str, metavar='BOOL',
                             help='init model from a pretrained model')
-        parser.add_argument('--pretrained-doc-model-path', default=None, metavar='PRETRAINED_PATH',
-                            help='pretrained doc model path')
+        parser.add_argument('--pretrained-model-path', default=None, metavar='PRETRAINED_PATH',
+                            help='pretrained model path')
+        parser.add_argument('--pretrained-task', default=None, metavar='PRETRAINED_TASK',
+                            help='pretrained task, nsp, masked_span, mix_order')
         # fmt: on
 
     # @staticmethod
@@ -98,6 +104,23 @@ class AbstractiveSummarizationBertTask(FairseqTask):
         super().__init__(args)
         self.src_dict = src_dict
         self.tgt_dict = tgt_dict
+        if args.pretrained_task:
+            self.pretrained_task = args.pretrained_task
+            assert self.pretrained_task in ['nsp', 'masked_span', 'mix_order'], 'allowed task: nsp, masked_span, mix_order'
+        else:
+            self.pretrained_task = None
+        self.min_mask_len = getattr(args, 'min_mask_len', None)
+        self.max_mask_len = getattr(args, 'max_mask_len', None)
+
+    def load_pretrained_model(self, model, state_file_name):
+        from torch.serialization import default_restore_location
+        if not state_file_name:
+            pass
+        else:
+            state = torch.load(state_file_name, map_location=lambda s, l: default_restore_location(s, 'cpu'))
+            params = state['model']
+            model.load_state_dict(params, strict=False)
+            print('*** *** load pretrained model done! *** ***')
 
     @classmethod
     def setup_task(cls, args, **kwargs):
@@ -198,14 +221,40 @@ class AbstractiveSummarizationBertTask(FairseqTask):
             src_dataset = ConcatDataset(src_datasets, sample_ratios)
             tgt_dataset = ConcatDataset(tgt_datasets, sample_ratios)
 
+        # if self.pretrained_task == 'mix_order':
+        #     self.datasets[split] = AbstractiveSumMixedBertDataset(
+        #         src_dataset, src_dataset.sizes, self.src_dict,
+        #         tgt_dataset, tgt_dataset.sizes, self.tgt_dict,
+        #         left_pad_source=self.args.left_pad_source,
+        #         left_pad_target=self.args.left_pad_target,
+        #         max_source_positions=self.args.max_source_positions,
+        #         max_target_positions=self.args.max_target_positions,
+        #         append_eos_to_target=True,
+        #     )
+        # elif self.pretrained_task == 'masked_span':
+        #     self.datasets[split] = AbstractiveSumMaskedBertDataset(
+        #         src_dataset, src_dataset.sizes, self.src_dict,
+        #         tgt_dataset, tgt_dataset.sizes, self.tgt_dict,
+        #         left_pad_source=self.args.left_pad_source,
+        #         left_pad_target=self.args.left_pad_target,
+        #         max_source_positions=self.args.max_source_positions,
+        #         max_target_positions=self.args.max_target_positions,
+        #         append_eos_to_target=True,
+        #         max_mask_len=self.args.max_mask_len,
+        #         min_mask_len=self.args.min_mask_len,
+        #     )
+        # else:
         self.datasets[split] = AbstractiveSumBertDataset(
-            src_dataset, src_dataset.sizes, self.src_dict,
-            tgt_dataset, tgt_dataset.sizes, self.tgt_dict,
-            left_pad_source=self.args.left_pad_source,
-            left_pad_target=self.args.left_pad_target,
-            max_source_positions=self.args.max_source_positions,
-            max_target_positions=self.args.max_target_positions,
-            append_eos_to_target=True,
+        src_dataset, src_dataset.sizes, self.src_dict,
+        tgt_dataset, tgt_dataset.sizes, self.tgt_dict,
+        left_pad_source=self.args.left_pad_source,
+        left_pad_target=self.args.left_pad_target,
+        max_source_positions=self.args.max_source_positions,
+        max_target_positions=self.args.max_target_positions,
+        append_eos_to_target=True,
+        pretrained_task=self.pretrained_task,
+        min_mask_len=self.min_mask_len,
+        max_mask_len=self.max_mask_len,
         )
 
     def build_dataset_for_inference(self, src_tokens, src_lengths):
@@ -225,7 +274,7 @@ class AbstractiveSummarizationBertTask(FairseqTask):
         """Return the target :class:`~fairseq.data.Dictionary`."""
         return self.tgt_dict
 
-    def train_step(self, sample, model, criterion, optimizer, ignore_grad=False, dec_optimizer=None):
+    def train_step(self, sample, model, criterion, optimizer, ignore_grad=False):
         model.train()
         loss, sample_size, logging_output = criterion(model, sample)
         if ignore_grad:
@@ -248,23 +297,3 @@ class AbstractiveSummarizationBertTask(FairseqTask):
             if tgt_size > self.max_tgt_size:
                 self.max_tgt_size = tgt_size
 
-    def load_pretrained_model(self, model, state_file_name):
-        from torch.serialization import default_restore_location
-        state = torch.load(state_file_name, map_location=lambda s, l: default_restore_location(s, 'cpu'))
-        params = state['model']
-
-        non_encoder_param_names = [k for k in params.keys() if not k.startswith('encoder')]
-        for nk in non_encoder_param_names:
-            del params[nk]
-
-        enc_cnt = 0
-        non_enc_cnt = 0
-        for k in params.keys():
-            if not k.startswith('encoder'):
-                print(k)
-                non_enc_cnt += 1
-            else:
-                enc_cnt += 1
-        print('enc_cnt = %d, non_enc_cnt = %d' % (enc_cnt, non_enc_cnt))
-        model.load_state_dict(params, strict=False)
-        print('*** *** load pretrained doc encoder done! *** ***')

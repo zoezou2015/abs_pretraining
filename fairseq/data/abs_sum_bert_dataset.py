@@ -7,6 +7,7 @@
 
 import numpy as np
 import torch
+import random
 
 from fairseq import utils
 
@@ -170,7 +171,7 @@ class AbstractiveSumBertDataset(FairseqDataset):
         tgt_sizes (List[int], optional): target sentence lengths
         tgt_dict (~fairseq.data.Dictionary, optional): target vocabulary
         left_pad_source (bool, optional): pad source tensors on the left side
-            (default: False).
+            (default: True).
         left_pad_target (bool, optional): pad target tensors on the left side
             (default: False).
         max_source_positions (int, optional): max number of tokens in the
@@ -191,9 +192,11 @@ class AbstractiveSumBertDataset(FairseqDataset):
     def __init__(
         self, src, src_sizes, src_dict,
         tgt=None, tgt_sizes=None, tgt_dict=None,
-        left_pad_source=False, left_pad_target=False,
+        left_pad_source=True, left_pad_target=False,
         max_source_positions=1024, max_target_positions=1024,
         shuffle=True, input_feeding=True, remove_eos_from_source=False, append_eos_to_target=False,
+        pretrained_task=None, mask_ratio=None, max_mask_len=None, min_mask_len=None,
+
     ):
         if tgt_dict is not None:
             assert src_dict.pad() == tgt_dict.pad()
@@ -216,9 +219,66 @@ class AbstractiveSumBertDataset(FairseqDataset):
         self.remove_eos_from_source = remove_eos_from_source
         self.append_eos_to_target = append_eos_to_target
 
+        self.pretrained_task = pretrained_task
+        self.training = True
+        self.mask_ratio = mask_ratio
+        self.max_mask_len = max_mask_len
+        self.min_mask_len = min_mask_len
+
     def __getitem__(self, index):
-        tgt_item = self.tgt[index] if self.tgt is not None else None
-        src_item = self.src[index]
+        if self.pretrained_task == 'masked_span':
+            src_tensor = self.src[index]
+            src_list = src_tensor.tolist()  # [self.src_dict.eos_index] + src_item.tolist()
+            # print()
+            # org_src = [self.src_dict[word] for word in src_list]
+            # print('orig src: ', org_src)
+
+            first_pad_pos = -1
+            for idx in src_list:
+                if idx == self.src_dict.pad_index:
+                    first_pad_pos = idx
+                    break
+            start, end = self.mask_interval(len(src_list), first_pad_pos)  # last [SEP] position
+            target = src_list[start: end].copy()
+
+            # mask source sentence
+            source = []
+            for i, w in enumerate(src_list):
+                if i >= start and i < end:
+                    w = self.mask_word(w)
+                if w is not None:
+                    source.append(w)
+            assert len(src_list) == len(source)
+            assert len(source) <= self.max_source_positions
+            assert len(target) <= self.max_target_positions
+            # new_src = [self.src_dict[word] for word in source]
+            # print('new src: ', new_src)
+            # new_tgt = [self.src_dict[word] for word in target]
+            # print('new tgt: ', new_tgt)
+            src_item = torch.LongTensor(source)
+            tgt_item = torch.LongTensor(target)
+        elif self.pretrained_task == 'mix_order':
+            src_item = self.src[index]
+            src_list = src_item.tolist()[1:-1]  # [self.src_dict.eos_index] + src_item.tolist()
+            tokens = [self.src_dict[idx] for idx in src_list]
+            src_tokens = ' '.join(tokens).split(self.src_dict.sep_word)
+            sents = []
+            labels = []
+            for i, tokens in enumerate(src_tokens):
+                sents.append([self.src_dict.index(tok) for tok in tokens.split(' ')])
+                labels.append(i)
+            # print()
+            random.shuffle(labels)
+            tgt_list = []
+            for l in labels:
+                tgt_list.extend(sents[l])
+            # print(labels)
+            # print(self.src_dict.sep_index)
+            # print(sents)
+            tgt_item = torch.LongTensor(tgt_list)
+        else:
+            tgt_item = self.tgt[index] if self.tgt is not None else None
+            src_item = self.src[index]
         # Append EOS to end of tgt sentence if it does not have an EOS and remove
         # EOS from end of src sentence if it exists. This is useful when we use
         # use existing datasets for opposite directions i.e., when we want to
@@ -238,6 +298,29 @@ class AbstractiveSumBertDataset(FairseqDataset):
             'source': src_item,
             'target': tgt_item,
         }
+
+    def mask_interval(self, len, first_pad_pos):
+        if first_pad_pos > 0:
+            len = min(len, first_pad_pos)
+        start = np.random.randint(1, max(2, (len-self.min_mask_len)))
+        mask_length = np.random.randint(self.min_mask_len, self.max_mask_len)
+        return start, min(len-1, start + mask_length)
+
+    def mask_word(self, w):
+        p = np.random.random()
+        if p < 0.8:  # 80%
+            return self.src_dict.mask_index
+        elif p < 0.5:  # 10%
+            return self.get_random_word()
+        else:  # 10%
+            return w
+
+    def get_random_word(self):
+        rand_tok = self.src_dict.mask_index
+        while rand_tok in self.special_idx:
+            rand_tok = np.random.randint(1, len(self.src_dict) - 1)
+        return rand_tok
+
 
     def __len__(self):
         return len(self.src)
@@ -285,11 +368,47 @@ class AbstractiveSumBertDataset(FairseqDataset):
         )
         bsz = batch_size if batch_size else max(num_tokens // max(src_len, tgt_len), 1)
         print('dummy batch: ntokens = {}, src_len = {}, tgt_len = {}, bsz = {}'.format(num_tokens, src_len, tgt_len, bsz))
+
+
+        # def create_src(src_len):
+        #     sent_len = 50
+        #     num_sent = src_len // sent_len
+        #     last_sent_len = src_len - sent_len * num_sent
+        #     doc = [self.src_dict.roberta_cls()]
+        #     for i in range(num_sent):
+        #         if i != 0:
+        #             doc.append(self.src_dict.sep())
+        #         for j in range(sent_len-2):
+        #             doc.append(self.src_dict.unk())
+        #         doc.append(self.src_dict.sep())
+        #     for i in range(last_sent_len):
+        #         if i == 0:
+        #             doc.append(self.src_dict.sep())
+        #         doc.append(self.src_dict.unk())
+        #     doc[-1] = self.src_dict.sep()
+        #     return torch.LongTensor(doc)
+        #
+        # def create_tgt(tgt_len):
+        #     sent_len = 50
+        #     num_sent = tgt_len // sent_len
+        #     last_sent_len = tgt_len - sent_len * num_sent
+        #     summary = []
+        #     for i in range(num_sent):
+        #         if i != 0:
+        #             summary.append(self.tgt_dict.sep())
+        #         for j in range(sent_len-1):
+        #             summary.append(self.tgt_dict.unk())
+        #     for i in range(last_sent_len):
+        #         if i == 0:
+        #             summary.append(self.tgt_dict.sep())
+        #         summary.append(self.tgt_dict.unk())
+        #     return torch.LongTensor(summary)
+
         return self.collater([
             {
                 'id': i,
-                'source': self.src_dict.dummy_sentence(src_len),
-                'target': self.tgt_dict.dummy_sentence(tgt_len) if self.tgt_dict is not None else None,
+                'source':  self.src_dict.dummy_sentence(src_len),
+                'target':  self.tgt_dict.dummy_sentence(tgt_len) if self.tgt_dict is not None else None,
             }
             for i in range(bsz)
         ])

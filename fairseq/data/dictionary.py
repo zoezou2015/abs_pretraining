@@ -20,6 +20,7 @@ class Dictionary(object):
     """A mapping from symbols to consecutive integers"""
     def __init__(self, pad='<pad>', eos='</s>', unk='<unk>'):
         self.unk_word, self.pad_word, self.eos_word = unk, pad, eos
+        self.sep = '[SEP]'
         self.symbols = []
         self.count = []
         self.indices = {}
@@ -155,6 +156,11 @@ class Dictionary(object):
         """Helper to get index of unk symbol"""
         return self.unk_index
 
+    def sep(self):
+        """Helper to get index of unk symbol"""
+        return self.indices[self.sep_word]
+
+
     @classmethod
     def load(cls, f, ignore_utf_errors=False):
         """Loads the dictionary from a text file with the format:
@@ -183,11 +189,17 @@ class Dictionary(object):
         lines = f.readlines()
         indices_start_line = d._load_meta(lines)
         for line in lines[indices_start_line:]:
-            idx = line.rfind(' ')
-            if idx == -1:
-                raise ValueError("Incorrect dictionary format, expected '<token> <cnt>'")
-            word = line[:idx]
-            count = int(line[idx + 1:])
+            # idx = line.rfind(' ')
+            # if idx == -1:
+            #     raise ValueError("Incorrect dictionary format, expected '<token> <cnt>'")
+            # word = line[:idx]
+            # count = int(line[idx + 1:])
+            # d.indices[word] = len(d.symbols)
+            # d.symbols.append(word)
+            # d.count.append(count)
+
+            word = line.strip()
+            count = 1  # no count information available
             d.indices[word] = len(d.symbols)
             d.symbols.append(word)
             d.count.append(count)

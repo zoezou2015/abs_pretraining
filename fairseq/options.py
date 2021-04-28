@@ -362,8 +362,6 @@ def add_common_eval_args(group):
     # fmt: off
     group.add_argument('--path', metavar='FILE',
                        help='path(s) to model file(s), colon separated')
-    group.add_argument('--save-path', metavar='SAVEDIR', type=str, default=None,
-                       help='path to save eval results (optional)"')
     group.add_argument('--remove-bpe', nargs='?', const='@@ ', default=None,
                        help='remove BPE tokens before scoring (can be set to sentencepiece)')
     group.add_argument('--quiet', action='store_true',

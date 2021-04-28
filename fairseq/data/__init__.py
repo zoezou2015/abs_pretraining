@@ -18,8 +18,10 @@ from .token_block_dataset import TokenBlockDataset
 from .transform_eos_dataset import TransformEosDataset
 from .abs_sum_bert_dataset import AbstractiveSumBertDataset
 from .abs_sum_xlnet_dataset import AbstractiveSumXLNetDataset
+from .abs_sum_roberta_dataset import AbstractiveSumRobertaDataset
 from .bert_dictionary import BertDictionary
 from .xlnet_dictionary import XLNetDictionary
+from .roberta_dictionary import RobertaDictionary
 
 from .iterators import (
     CountingIterator,
@@ -48,6 +50,9 @@ __all__ = [
     'TransformEosDataset',
     'AbstractiveSumBertDataset',
     'AbstractiveSumXLNetDataset',
+    'AbstractiveSumRobertaDataset',
     'BertDictionary',
     'XLNetDictionary',
+    'RobertaDictionary',
+
 ]

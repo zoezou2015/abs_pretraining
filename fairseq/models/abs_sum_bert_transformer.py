@@ -83,6 +83,8 @@ class AbsSumBertTransformerModel(FairseqModel):
                             help='num decoder layers')
         parser.add_argument('--decoder-attention-heads', type=int, metavar='N',
                             help='num decoder attention heads')
+        parser.add_argument('--decoder-dropout', type=float, metavar='D',
+                            help='decoder dropout probability')
         parser.add_argument('--decoder-learned-pos', action='store_true',
                             help='use learned positional embeddings in the decoder')
         parser.add_argument('--decoder-normalize-before', action='store_true',
@@ -153,8 +155,8 @@ class AbsSumBertTransformerModel(FairseqModel):
                 tgt_dict, args.decoder_embed_dim, args.decoder_embed_path
             )
 
-        encoder = TransformerEncoder(args, src_dict, encoder_embed_tokens)
-        decoder = TransformerDecoder(args, tgt_dict, decoder_embed_tokens)
+        encoder = TransformerEncoder(args, src_dict, encoder_embed_tokens, left_pad=args.left_pad_source)
+        decoder = TransformerDecoder(args, tgt_dict, decoder_embed_tokens, left_pad=args.left_pad_target)
         return AbsSumBertTransformerModel(encoder, decoder)
 
     def forward(self, src_tokens, segment_ids, prev_output_tokens):
@@ -183,8 +185,8 @@ class TransformerEncoder(FairseqEncoder):
 
         print('Distributed rank: ', args.distributed_rank)
         print('Number of used GPU: ', self.n_gpu)
-        print('args.distributed_world_size', args.distributed_world_size)
-        # if args.distributed_world_size > 1:
+        print('args.init_distributed: ', args.init_distributed)
+
         if args.init_distributed:
             if args.distributed_rank not in [-1, 0]:  # [1, 0]
                 torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
@@ -193,9 +195,6 @@ class TransformerEncoder(FairseqEncoder):
                                             cache_dir=PYTORCH_PRETRAINED_BERT_CACHE / 'distributed_{}'.format(args.distributed_rank))
         self.bert = BertModel.from_pretrained(args.bert_model, config=config)
 
-        # self.bert.pooler.dense.weight.requires_grad = False
-        # self.bert.pooler.dense.bias.requires_grad = False
-        # if args.distributed_world_size > 1:
         if args.init_distributed:
             if args.distributed_rank == 0:  # 1
                 torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
@@ -372,7 +371,7 @@ class TransformerDecoder(FairseqIncrementalDecoder):
 
     def __init__(self, args, dictionary, embed_tokens, no_encoder_attn=False, left_pad=False, final_norm=True):
         super().__init__(dictionary)
-        self.dropout = args.dropout
+        self.dropout = args.decoder_dropout
         self.share_input_output_embed = args.share_decoder_input_output_embed
 
         input_embed_dim = embed_tokens.embedding_dim
@@ -627,7 +626,7 @@ class TransformerDecoderLayer(nn.Module):
             self.embed_dim, args.decoder_attention_heads,
             dropout=args.attention_dropout,
         )
-        self.dropout = args.dropout
+        self.dropout = args.decoder_dropout
         self.relu_dropout = args.relu_dropout
         self.normalize_before = args.decoder_normalize_before
 
@@ -778,10 +777,10 @@ def base_architecture(args):
     args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 8)
     args.decoder_normalize_before = getattr(args, 'decoder_normalize_before', False)
     args.decoder_learned_pos = getattr(args, 'decoder_learned_pos', False)
-    # args.decoder_dropout = getattr(args, 'dec_dropout', 0.)
     args.attention_dropout = getattr(args, 'attention_dropout', 0.)
     args.relu_dropout = getattr(args, 'relu_dropout', 0.)
     args.dropout = getattr(args, 'dropout', 0.1)
+    args.decoder_dropout = getattr(args, 'decoder_dropout', args.dropout)
     args.adaptive_softmax_cutoff = getattr(args, 'adaptive_softmax_cutoff', None)
     args.adaptive_softmax_dropout = getattr(args, 'adaptive_softmax_dropout', 0)
     args.share_decoder_input_output_embed = getattr(args, 'share_decoder_input_output_embed', False)
@@ -801,7 +800,7 @@ def transformer_abs_sum_bert(args):
     # args.encoder_layers = getattr(args, 'encoder_layers', 6)
     args.encoder_normalize_before = getattr(args, 'encoder_normalize_before', False)
     args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 768)
-    # args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 1024)
+    # args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 2048)
     # args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 4)
     # args.decoder_layers = getattr(args, 'decoder_layers', 6)
     base_architecture(args)
@@ -809,17 +808,30 @@ def transformer_abs_sum_bert(args):
 @register_model_architecture('bert_transformer', 'abs_sum_bert_transformer_medium')
 def transformer_abs_sum_bert(args):
     args.encoder_embed_dim = getattr(args, 'encoder_embed_dim', 768)
-    args.encoder_ffn_embed_dim = getattr(args, 'encoder_ffn_embed_dim', 3072)
-    args.encoder_attention_heads = getattr(args, 'encoder_attention_heads', 12)
-    args.encoder_normalize_before = getattr(args, 'encoder_normalize_before', False)
+    # args.encoder_ffn_embed_dim = getattr(args, 'encoder_ffn_embed_dim', 3072)
+    # args.encoder_attention_heads = getattr(args, 'encoder_attention_heads', 12)
+    # args.encoder_normalize_before = getattr(args, 'encoder_normalize_before', False)
     # args.encoder_layers = getattr(args, 'encoder_layers', 6)
     args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 768)
     args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 3072)
     args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 12)
     args.decoder_layers = getattr(args, 'decoder_layers', 12)
-    args.dropout = getattr(args, 'dropout', 0.1)
+    # args.dropout = getattr(args, 'dropout', 0.1)
     base_architecture(args)
 
+
+@register_model_architecture('bert_transformer', 'abs_sum_bert_bert')
+def transformer_abs_sum_bert(args):
+    args.encoder_embed_dim = getattr(args, 'encoder_embed_dim', 768)
+    # args.encoder_ffn_embed_dim = getattr(args, 'encoder_ffn_embed_dim', 1024)
+    # args.encoder_attention_heads = getattr(args, 'encoder_attention_heads', 4)
+    # args.encoder_layers = getattr(args, 'encoder_layers', 6)
+    args.encoder_normalize_before = getattr(args, 'encoder_normalize_before', False)
+    args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 768)
+    # args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 2048)
+    # args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 4)
+    # args.decoder_layers = getattr(args, 'decoder_layers', 6)
+    base_architecture(args)
 
 @register_model_architecture('bert_transformer', 'abs_sum_bert_transformer_large')
 def transformer_abs_sum_bert(args):

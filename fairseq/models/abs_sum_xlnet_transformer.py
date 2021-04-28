@@ -148,8 +148,8 @@ class AbsSumXLNetTransformerModel(FairseqModel):
                 tgt_dict, args.decoder_embed_dim, args.decoder_embed_path
             )
 
-        encoder = TransformerEncoder(args, src_dict, encoder_embed_tokens)
-        decoder = TransformerDecoder(args, tgt_dict, decoder_embed_tokens)
+        encoder = TransformerEncoder(args, src_dict, encoder_embed_tokens, left_pad=args.left_pad_source)
+        decoder = TransformerDecoder(args, tgt_dict, decoder_embed_tokens, left_pad=args.left_pad_target)
         return AbsSumXLNetTransformerModel(encoder, decoder)
 
     def forward(self, src_tokens, segment_ids, prev_output_tokens):
@@ -181,15 +181,17 @@ class TransformerEncoder(FairseqEncoder):
 
         # if self.n_gpu > 1:
         #     torch.distributed.barrier()
-        if args.distributed_rank not in [-1, 0]:
-            torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
+        if args.distributed_world_size > 1:
+            if args.distributed_rank not in [-1, 0]:  #  [1, 0]
+                torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
         # Load pre-trained model (weights)
         config = XLNetConfig.from_pretrained(args.xlnet_model)
         self.xlnet = XLNetModel.from_pretrained(args.xlnet_model, config=config)
 
-        if args.distributed_rank == 0:
-            torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
+        if args.distributed_world_size > 1:
+            if args.distributed_rank == 0:  # 1
+                torch.distributed.barrier()  # Make sure only the first process in distributed training will download model & vocab
 
         embed_dim = embed_tokens.embedding_dim
         self.padding_idx = embed_tokens.padding_idx
@@ -203,11 +205,11 @@ class TransformerEncoder(FairseqEncoder):
             learned=args.encoder_learned_pos,
         ) if not args.no_token_positional_embeddings else None
 
-        self.layers = nn.ModuleList([])
-        self.layers.extend([
-            TransformerEncoderLayer(args)
-            for i in range(args.encoder_layers)
-        ])
+        # self.layers = nn.ModuleList([])
+        # self.layers.extend([
+        #     TransformerEncoderLayer(args)
+        #     for i in range(args.encoder_layers)
+        # ])
         self.register_buffer('version', torch.Tensor([2]))
         self.normalize = args.encoder_normalize_before
         if self.normalize:
@@ -261,8 +263,8 @@ class TransformerEncoder(FairseqEncoder):
             encoder_padding_mask = None
 
         # encoder layers
-        for layer in self.layers:
-            sent_repr = layer(sent_repr, encoder_padding_mask)
+        # for layer in self.layers:
+        #     sent_repr = layer(sent_repr, encoder_padding_mask)
 
         if self.normalize:
             sent_repr = self.layer_norm(sent_repr)
@@ -805,8 +807,8 @@ def transformer_abs_sum_xlnet(args):
     args.decoder_embed_dim = getattr(args, 'decoder_embed_dim', 768)
     args.decoder_ffn_embed_dim = getattr(args, 'decoder_ffn_embed_dim', 3072)
     args.decoder_attention_heads = getattr(args, 'decoder_attention_heads', 12)
-    args.decoder_layers = getattr(args, 'decoder_layers', 6)
-    args.dropout = getattr(args, 'dropout', 0.1)
+    args.decoder_layers = getattr(args, 'decoder_layers', 12)
+    # args.dropout = getattr(args, 'dropout', 0.1)
     base_architecture(args)
 
 '''

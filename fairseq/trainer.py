@@ -123,12 +123,12 @@ class Trainer(object):
 
     def _build_optimizer(self):
         params = list(filter(lambda p: p.requires_grad, self.model.parameters()))
+        # print(self.args.param_name)
         # for n, p in list(self.model.named_parameters()):
-        #     if p.requires_grad and n.startswith('encoder.bert'):
+        #     if p.requires_grad and self.args.param_name in n:
         #         print(n)
         #     else:
         #         print('=====%s',n)
-        # params = [(n, p) for n, p in list(self.model.parameters()) if n.startswith('bert.model')]
 
         if self.args.fp16:
             if self.cuda and torch.cuda.get_device_capability(0)[0] < 7:
@@ -144,11 +144,13 @@ class Trainer(object):
             if self.args.sep_optim:
                 # bert_params = [(n, p) for n, p in list(self.model.named_parameters()) if n.startswith('encoder.bert')]
                 # dec_params = [(n, p) for n, p in list(self.model.named_parameters()) if not n.startswith('encoder.bert')]
-                bert_params = [p for n, p in list(self.model.named_parameters()) if n.startswith('encoder.bert')]
-                dec_params = [p for n, p in list(self.model.named_parameters()) if
-                              not n.startswith('encoder.bert')]
-                self._optimizer = optim.build_optimizer_bert(self.args, bert_params)
+                # bert_params = [p for n, p in list(self.model.named_parameters()) if n.startswith(self.args.param_name)]
+                # dec_params = [p for n, p in list(self.model.named_parameters()) if
+                #               not n.startswith(self.args.param_name)]
+                bert_params = [p for n, p in list(self.model.named_parameters()) if self.args.param_name in n]
+                dec_params = [p for n, p in list(self.model.named_parameters()) if self.args.param_name not in n]
                 self._dec_optimizer = optim.build_optimizer_dec(self.args, dec_params)
+                self._optimizer = optim.build_optimizer_bert(self.args, bert_params)
             else:
                 self._optimizer = optim.build_optimizer(self.args, params)
 
@@ -334,8 +336,7 @@ class Trainer(object):
                 # forward and backward
                 loss, sample_size, logging_output = self.task.train_step(
                     sample, self.model, self.criterion, self.optimizer,
-                    ignore_grad, dec_optimizer=self.dec_optimizer
-                )
+                    ignore_grad)
 
                 if not ignore_grad:
                     logging_outputs.append(logging_output)

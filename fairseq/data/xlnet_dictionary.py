@@ -276,11 +276,12 @@ class XLNetDictionary(Dictionary):
             # word = line[:idx]
             # count = int(line[idx + 1:])
             word = line.strip()
-            count = 1  # no count information available
+            count = 100  # no count information available
             d.indices[word] = len(d.symbols)
             d.symbols.append(word)
             d.count.append(count)
         assert len(d.indices) == len(lines)
+
         d.find_special_tokens()
         return d
 

@@ -58,6 +58,10 @@ class InverseSquareRootSchedule(FairseqLRScheduler):
                             help='warmup the learning rate linearly for the first N updates')
         parser.add_argument('--warmup-init-lr', default=-1, type=float, metavar='LR',
                             help='initial learning rate during warmup phase; default is args.lr')
+        parser.add_argument('--warmup-dec-updates', default=4000, type=int, metavar='N',
+                            help='warmup the learning rate linearly for the first N updates')
+        parser.add_argument('--warmup-init-dec-lr', default=-1, type=float, metavar='LR',
+                            help='initial learning rate during warmup phase; default is args.lr')
         # fmt: on
 
     def step(self, epoch, val_loss=None):
@@ -68,9 +72,17 @@ class InverseSquareRootSchedule(FairseqLRScheduler):
 
     def step_update(self, num_updates):
         """Update the learning rate after each update."""
-        if num_updates < self.args.warmup_updates:
-            self.lr = self.args.warmup_init_lr + num_updates*self.lr_step
+        if not self.decoder:
+            if num_updates < self.args.warmup_updates:
+                self.lr = self.args.warmup_init_lr + num_updates*self.lr_step
+            else:
+                self.lr = self.decay_factor * num_updates**-0.5
+            self.optimizer.set_lr(self.lr)
+            return self.lr
         else:
-            self.lr = self.decay_factor * num_updates**-0.5
-        self.optimizer.set_lr(self.lr)
-        return self.lr
+            if num_updates < self.args.warmup_dec_updates:
+                self.lr = self.args.warmup_init_dec_lr + num_updates*self.lr_step
+            else:
+                self.lr = self.decay_factor * num_updates**-0.5
+            self.optimizer.set_lr(self.lr)
+            return self.lr
